@@ -1,0 +1,17 @@
+[
+  {
+    "modid": "nec",
+    "name": "NotEnoughCoins",
+    "description": "Auction flipping mod for Hypixel Skyblock",
+    "version": "${version}",
+    "mcversion": "1.8.9",
+    "url": "https://notenoughcoins.net",
+    "updateUrl": "a.com",
+    "authorList": [
+      "Mindlessly"
+    ],
+    "logoFile": "",
+    "screenshots": [],
+    "dependencies": []
+  }
+]

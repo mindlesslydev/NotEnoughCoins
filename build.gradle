@@ -1,0 +1,75 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+buildscript {
+    repositories {
+        maven { url 'https://jitpack.io' }
+        maven { url 'https://maven.minecraftforge.net/' }
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+    dependencies {
+        classpath 'com.github.hard2make1name:ForgeGradle:e682169'
+    }
+}
+
+apply plugin: 'net.minecraftforge.gradle.forge'
+apply plugin: 'java'
+
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+    maven { url = "https://repo.sk1er.club/repository/maven-public" }
+    maven { url = "https://repo.spongepowered.org/repository/maven-public/" }
+}
+dependencies {
+	implementation group: 'com.google.code.gson', name: 'gson', version: '2.2.4'
+}
+
+test {
+    systemProperty "file.encoding", "utf-8"
+}
+
+version = "1.14.9"
+group = "me.mindlessly.notenoughcoins"
+archivesBaseName = "NotEnoughCoins"
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+minecraft {
+    version = "1.8.9-11.15.1.2318-1.8.9"
+    runDir = "run"
+
+    mappings = "stable_22"
+}
+sourceJar {
+    enabled = false
+}
+
+// Automatic version replacements
+task processSource(type: Sync) {
+    from sourceSets.main.java
+    inputs.property 'version', project.version
+    filter(ReplaceTokens, tokens: [version: project.version])
+    into "$buildDir/src"
+}
+
+compileJava {
+    source = processSource.outputs
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    from(sourceSets.main.resources.srcDirs) {
+        include 'mcmod.info'
+        expand 'version': project.version
+    }
+
+    from(sourceSets.main.resources.srcDirs) {
+        exclude 'mcmod.info'
+    }
+}
+    
