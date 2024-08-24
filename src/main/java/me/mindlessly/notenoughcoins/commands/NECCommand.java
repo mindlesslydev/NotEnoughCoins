@@ -1,10 +1,5 @@
 package me.mindlessly.notenoughcoins.commands;
 
-import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Objects;
-
 import me.mindlessly.notenoughcoins.Reference;
 import me.mindlessly.notenoughcoins.commands.subcommand.Subcommand;
 import net.minecraft.command.CommandBase;
@@ -12,6 +7,11 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
+
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
 
 public class NECCommand extends CommandBase {
     private final Subcommand[] subcommands;
@@ -55,7 +55,7 @@ public class NECCommand extends CommandBase {
     @Override
     public void processCommand(ICommandSender sender, String[] args) {
         if (args.length == 0) {
-        	//GuiEvents.guiOpen = true;
+            //GuiEvents.guiOpen = true;
             return;
         }
         for (Subcommand subcommand : this.subcommands) {
@@ -63,7 +63,7 @@ public class NECCommand extends CommandBase {
                 if (!subcommand.processCommand(sender, Arrays.copyOfRange(args, 1, args.length))) {
                     // processCommand returned false
                     //Utils.sendMessageWithPrefix("&cFailed to execute command, command usage: /nec "
-                        //+ subcommand.getCommandName() + " " + subcommand.getCommandUsage());
+                    //+ subcommand.getCommandName() + " " + subcommand.getCommandUsage());
                 }
                 return;
             }
