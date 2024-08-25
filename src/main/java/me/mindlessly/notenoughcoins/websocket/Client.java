@@ -1,6 +1,7 @@
 package me.mindlessly.notenoughcoins.websocket;
 
 import com.google.gson.*;
+import me.mindlessly.notenoughcoins.Reference;
 import me.mindlessly.notenoughcoins.configuration.ConfigHandler;
 import me.mindlessly.notenoughcoins.utils.Blacklist;
 import me.mindlessly.notenoughcoins.utils.Utils;
@@ -27,11 +28,13 @@ public class Client {
     private static final String SERVER_HOST = "vps-9587f748.vps.ovh.ca";
     private static final int SERVER_PORT = 8087;
     public static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
-    private static Gson gson = new Gson();
     private static Socket socket;
 
     private static Minecraft mc;
 
+    /**
+     * Method to connect the flip server
+     */
     public static void start() {
         try {
             socket = new Socket(SERVER_HOST, SERVER_PORT);
@@ -39,131 +42,20 @@ public class Client {
             PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            // Listen for server messages in a separate thread
-            Thread serverListenerThread = new Thread(() -> {
-                try {
-
-                    byte[] buffer = new byte[1024];
-                    int bytesRead;
-                    while ((bytesRead = socket.getInputStream().read(buffer)) != -1) {
-                        // Sometimes multiple JSON objects will be received from the websocket at the
-                        // same time, we need to seperate these
-                        String receivedData = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
-
-                        // Define the regular expression pattern to match JSON objects
-                        String regexPattern = "\\{.*?\\}";
-
-                        // Create a regular expression matcher
-                        Pattern pattern = Pattern.compile(regexPattern);
-                        Matcher matcher = pattern.matcher(receivedData);
-
-                        // Process each matched JSON object
-                        while (matcher.find()) {
-                            String jsonObject = matcher.group();
-
-                            JsonObject config = ConfigHandler.getConfig();
-                            try {
-                                // Parse the JSON object of the flip
-                                JsonObject flip = new Gson().fromJson(jsonObject, JsonObject.class);
-                                JsonObject blacklist = Blacklist.json.get("items").getAsJsonObject();
-
-                                boolean skip = getIfBlacklisted(blacklist, flip);
-
-                                if (skip) {
-                                    continue;
-                                }
-
-                                JsonObject override = null;
-                                String id = flip.get("id").getAsString();
-
-                                if (blacklist.has(id)) {
-                                    override = blacklist.get(id).getAsJsonObject();
-                                }
-                                int minProfit = config.get("minprofit").getAsInt();
-                                int minPercent = config.get("minpercent").getAsInt();
-                                int minDemand = config.get("mindemand").getAsInt();
-
-                                if (override != null) {
-                                    if (override.has("minprofit")) {
-                                        minProfit = override.get("minprofit").getAsInt();
-                                    }
-                                    if (override.has("minpercent")) {
-                                        minPercent = override.get("minpercent").getAsInt();
-                                    }
-                                }
-
-                                mc = Minecraft.getMinecraft();
-                                if (mc.theWorld != null && mc.theWorld.getScoreboard() != null) {
-                                    String name = flip.get("name").getAsString();
-                                    String stars = "";
-                                    int index = name.indexOf("✪");
-                                    if (index > -1) {
-                                        stars = name.substring(index);
-                                        name = name.substring(0, index);
-                                    }
-
-                                    double price = flip.get("price").getAsDouble();
-                                    double listFor = flip.get("listFor").getAsDouble();
-                                    double profit = flip.get("profit").getAsDouble();
-
-                                    if (config.has("adjustment")) {
-                                        int adjustment = config.get("adjustment").getAsInt();
-                                        listFor = listFor * (double) (100 - adjustment) / 100;
-                                        profit = Utils.getProfit(price, listFor);
-                                    }
-
-                                    if (config.has("maxcost") && config.get("maxcost").getAsInt() < price) {
-                                        continue;
-
-                                    } else if (price > Utils.getPurse()) {
-                                        continue;
-                                    }
-
-                                    if (profit < minProfit) {
-                                        continue;
-                                    }
-
-                                    if ((profit / listFor) * 100 < minPercent) {
-                                        continue;
-                                    }
-
-                                    if (flip.has("sales") && flip.get("sales").getAsInt() < minDemand) {
-                                        continue;
-                                    }
-
-                                    ChatComponentText msg = new ChatComponentText(EnumChatFormatting.GOLD + "[NEC] "
-                                        + Utils.getColorCodeFromRarity(flip.get("rarity").getAsString()) + name
-                                        + EnumChatFormatting.GOLD + stars + EnumChatFormatting.GREEN + " "
-                                        + Utils.formatPrice(price) + EnumChatFormatting.WHITE + "->"
-                                        + EnumChatFormatting.GREEN + Utils.formatPrice(listFor) + " " + "+"
-                                        + Utils.formatPrice(profit));
-
-                                    msg.setChatStyle(new ChatStyle()
-                                        .setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND,
-                                            "/viewauction " + flip.get("uuid").getAsString())));
-
-                                    if (config.get("toggle").getAsBoolean()) {
-                                        mc.thePlayer.addChatMessage(new ChatComponentText(""));
-                                        mc.thePlayer.addChatMessage(msg);
-                                    }
-                                }
-
-                            } catch (JsonSyntaxException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            });
-            serverListenerThread.start();
+            handleFlipMessages();
 
         } catch (IOException e) {
-            e.printStackTrace();
+            Reference.logger.error(e.getMessage());
         }
     }
 
+    /**
+     * Method to check if a flip is blacklisted
+     *
+     * @param blacklist - The users blacklist
+     * @param flip      - The flip info we are checking
+     * @return - If an item is blacklisted
+     */
     private static boolean getIfBlacklisted(JsonObject blacklist, JsonObject flip) {
         JsonArray enchants = null;
         JsonArray gems = null;
@@ -203,8 +95,7 @@ public class Client {
             }
             if (info.has("clean")) {
                 if (info.get("clean").getAsBoolean()) {
-                    if (enchants == null && gems == null && upgradeLevel == 0 && scrolls == null && reforge == null
-                        && enrichment == null) {
+                    if (enchants == null && gems == null && upgradeLevel == 0 && scrolls == null && reforge == null && enrichment == null) {
                         return true;
                     }
                 }
@@ -265,6 +156,9 @@ public class Client {
         return false;
     }
 
+    /**
+     * Method to reconnect to NEC server if it is lost
+     */
     public static void autoReconnect() {
         scheduledExecutorService.scheduleAtFixedRate(() -> {
             if (!isSocketConnected(socket)) {
@@ -274,6 +168,12 @@ public class Client {
 
     }
 
+    /**
+     * Method to check if a socket is connected
+     *
+     * @param socket - The socket to check
+     * @return - If the socket is connected
+     */
     private static boolean isSocketConnected(Socket socket) {
         try {
             // Check if the socket's input stream is closed
@@ -288,5 +188,122 @@ public class Client {
         }
 
         return true;
+    }
+
+    /**
+     * Method to handle flip messages
+     */
+    private static void handleFlipMessages() {
+        // Listen for server messages in a separate thread
+        Thread serverListenerThread = new Thread(() -> {
+            try {
+
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+                while ((bytesRead = socket.getInputStream().read(buffer)) != -1) {
+                    //Sometimes multiple JSON objects will be received from the websocket at the same time, we need to separate these
+                    String receivedData = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
+
+                    // Define the regular expression pattern to match JSON objects
+                    String regexPattern = "\\{.*?}";
+
+                    // Create a regular expression matcher
+                    Pattern pattern = Pattern.compile(regexPattern);
+                    Matcher matcher = pattern.matcher(receivedData);
+
+                    // Process each matched JSON object
+                    while (matcher.find()) {
+                        String jsonObject = matcher.group();
+
+                        JsonObject config = ConfigHandler.getConfig();
+                        try {
+                            // Parse the JSON object of the flip
+                            JsonObject flip = new Gson().fromJson(jsonObject, JsonObject.class);
+                            JsonObject blacklist = Blacklist.json.get("items").getAsJsonObject();
+
+                            boolean skip = getIfBlacklisted(blacklist, flip);
+
+                            if (skip) {
+                                continue;
+                            }
+
+                            JsonObject override = null;
+                            String id = flip.get("id").getAsString();
+
+                            if (blacklist.has(id)) {
+                                override = blacklist.get(id).getAsJsonObject();
+                            }
+                            int minProfit = config.get("minprofit").getAsInt();
+                            int minPercent = config.get("minpercent").getAsInt();
+                            int minDemand = config.get("mindemand").getAsInt();
+
+                            if (override != null) {
+                                if (override.has("minprofit")) {
+                                    minProfit = override.get("minprofit").getAsInt();
+                                }
+                                if (override.has("minpercent")) {
+                                    minPercent = override.get("minpercent").getAsInt();
+                                }
+                            }
+
+                            mc = Minecraft.getMinecraft();
+                            if (mc.theWorld != null && mc.theWorld.getScoreboard() != null) {
+                                String name = flip.get("name").getAsString();
+                                String stars = "";
+                                int index = name.indexOf("✪");
+                                if (index > -1) {
+                                    stars = name.substring(index);
+                                    name = name.substring(0, index);
+                                }
+
+                                double price = flip.get("price").getAsDouble();
+                                double listFor = flip.get("listFor").getAsDouble();
+                                double profit = flip.get("profit").getAsDouble();
+
+                                if (config.has("adjustment")) {
+                                    int adjustment = config.get("adjustment").getAsInt();
+                                    listFor = listFor * (double) (100 - adjustment) / 100;
+                                    profit = Utils.getProfit(price, listFor);
+                                }
+
+                                if (config.has("maxcost") && config.get("maxcost").getAsInt() < price) {
+                                    continue;
+
+                                } else if (price > Utils.getPurse()) {
+                                    continue;
+                                }
+
+                                if (profit < minProfit) {
+                                    continue;
+                                }
+
+                                if ((profit / listFor) * 100 < minPercent) {
+                                    continue;
+                                }
+
+                                if (flip.has("sales") && flip.get("sales").getAsInt() < minDemand) {
+                                    continue;
+                                }
+
+                                ChatComponentText msg = new ChatComponentText(EnumChatFormatting.GOLD + "[NEC] " + Utils.getColorCodeFromRarity(flip.get("rarity").getAsString()) + name + EnumChatFormatting.GOLD + stars + EnumChatFormatting.GREEN + " " + Utils.formatPrice(price) + EnumChatFormatting.WHITE + "->" + EnumChatFormatting.GREEN + Utils.formatPrice(listFor) + " " + "+" + Utils.formatPrice(profit));
+
+                                msg.setChatStyle(new ChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/viewauction " + flip.get("uuid").getAsString())));
+
+                                if (config.get("toggle").getAsBoolean()) {
+                                    mc.thePlayer.addChatMessage(new ChatComponentText(""));
+                                    mc.thePlayer.addChatMessage(msg);
+                                }
+                            }
+
+                        } catch (JsonSyntaxException e) {
+                            Reference.logger.error(e.getMessage());
+                        }
+                    }
+                }
+            } catch (IOException e) {
+                Reference.logger.error(e.getMessage());
+            }
+        });
+        serverListenerThread.start();
     }
 }

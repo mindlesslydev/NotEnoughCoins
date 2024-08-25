@@ -1,5 +1,6 @@
 package me.mindlessly.notenoughcoins.commands.subcommand;
 
+import me.mindlessly.notenoughcoins.Reference;
 import net.minecraft.client.Minecraft;
 import net.minecraft.command.ICommandSender;
 
@@ -41,7 +42,7 @@ public class Folder implements Subcommand {
         try {
             Desktop.getDesktop().open(new File(Minecraft.getMinecraft().mcDataDir.getAbsolutePath() + "//NotEnoughCoins//"));
         } catch (IOException e) {
-            e.printStackTrace();
+            Reference.logger.error(e.getMessage());
             return false;
         }
         return true;

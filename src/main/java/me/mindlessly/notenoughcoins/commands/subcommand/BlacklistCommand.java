@@ -79,7 +79,7 @@ public class BlacklistCommand implements Subcommand {
                 }
             } else if (pet) {
                 Blacklist.addPet(ApiHandler.pets.get(name).getAsJsonArray());
-            } else if (skin) {
+            } else {
                 Blacklist.addSkin(ApiHandler.skins.get(name).getAsString());
             }
             sender.addChatMessage(new ChatComponentText("Successfully added " + EnumChatFormatting.GREEN + name
@@ -93,7 +93,7 @@ public class BlacklistCommand implements Subcommand {
                 }
             } else if (pet) {
                 Blacklist.removePet(ApiHandler.pets.get(name).getAsJsonArray());
-            } else if (skin) {
+            } else {
                 Blacklist.removeSkin(ApiHandler.skins.get(name).getAsString());
             }
             sender.addChatMessage(new ChatComponentText("Successfully removed " + EnumChatFormatting.GREEN + name

@@ -3,22 +3,29 @@ package me.mindlessly.notenoughcoins.configuration;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import me.mindlessly.notenoughcoins.Reference;
 import me.mindlessly.notenoughcoins.utils.Utils;
 import net.minecraft.client.Minecraft;
 import org.apache.commons.io.IOUtils;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 public class ConfigHandler {
 
     private static File configFile;
     private static JsonObject config;
 
+    /**
+     * Method to load config
+     *
+     * @throws IOException - Thrown if there is an error reading the config file
+     */
     public static void init() throws IOException {
         configFile = new File(Minecraft.getMinecraft().mcDataDir.getAbsolutePath() + "//NotEnoughCoins//nec.json");
         if (configFile.exists() && !configFile.isDirectory()) {
-            InputStream is = new FileInputStream(configFile);
+            InputStream is = Files.newInputStream(configFile.toPath());
             String jsonTxt = IOUtils.toString(is, StandardCharsets.UTF_8);
             config = new JsonParser().parse(jsonTxt).getAsJsonObject();
             // Compatibility fix for some users
@@ -31,7 +38,7 @@ public class ConfigHandler {
             configFile.getParentFile().mkdirs();
             configFile.createNewFile();
             try (Writer writer = new BufferedWriter(
-                new OutputStreamWriter(new FileOutputStream(configFile), "utf-8"))) {
+                new OutputStreamWriter(Files.newOutputStream(configFile.toPath()), StandardCharsets.UTF_8))) {
                 config = new JsonObject();
                 config.add("toggle", Utils.gson.toJsonTree(false));
                 config.add("mindemand", Utils.gson.toJsonTree(0));
@@ -43,13 +50,19 @@ public class ConfigHandler {
         }
     }
 
+    /**
+     * Method to write to config file
+     *
+     * @param key      - The field being edited
+     * @param jsonTree - The config data structure
+     */
     public static void write(String key, JsonElement jsonTree) {
         config.add(key, jsonTree);
-        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(configFile), "utf-8"))) {
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(configFile.toPath()), StandardCharsets.UTF_8))) {
             writer.write(config.toString());
             writer.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            Reference.logger.error(e.getMessage());
         }
     }
 
@@ -57,16 +70,21 @@ public class ConfigHandler {
         return config;
     }
 
-    public static void remove(String string) {
+
+    /**
+     * Method to remove a field from the config
+     *
+     * @param key The field to remove
+     */
+    public static void remove(String key) {
         JsonObject config = getConfig();
-        if (config.has(string)) {
-            config.remove(string);
+        if (config.has(key)) {
+            config.remove(key);
         }
-        try (Writer writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(configFile), StandardCharsets.UTF_8))) {
+        try (Writer writer = new BufferedWriter(new OutputStreamWriter(Files.newOutputStream(configFile.toPath()), StandardCharsets.UTF_8))) {
             writer.write(config.toString());
-            writer.close();
         } catch (Exception e) {
-            e.printStackTrace();
+            Reference.logger.error(e.getMessage());
         }
     }
 

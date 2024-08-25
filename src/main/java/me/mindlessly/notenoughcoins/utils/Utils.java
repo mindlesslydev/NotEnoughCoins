@@ -22,6 +22,12 @@ public class Utils {
 
     public static Gson gson = new Gson();
 
+    /**
+     * Method to format a price
+     *
+     * @param value - The raw price
+     * @return - The formatted price
+     */
     public static String formatPrice(double value) {
         String result;
         if (value >= 1000000) {
@@ -34,6 +40,12 @@ public class Utils {
         return result;
     }
 
+    /**
+     * Method to get JSON data from a URL
+     *
+     * @param jsonUrl - The address of the JSON file
+     * @return - The JSON data
+     */
     public static JsonElement getJson(String jsonUrl) {
         try {
             URL url = new URL(jsonUrl);
@@ -47,6 +59,12 @@ public class Utils {
         }
     }
 
+    /**
+     * Method to get the color code for a rarity
+     *
+     * @param rarity - The rarity to get the color code for
+     * @return - The color code
+     */
     public static EnumChatFormatting getColorCodeFromRarity(String rarity) {
         switch (rarity) {
             case "UNCOMMON":
@@ -88,9 +106,23 @@ public class Utils {
         return 0;
     }
 
+    /**
+     * Method to remove color codes from a string
+     *
+     * @param in - The string to format
+     * @return - The cleaned string
+     */
     public static String removeColorCodes(String in) {
         return in.replaceAll("(?i)\\u00A7.", "");
     }
+
+    /**
+     * Method to remove multiple elements from a JsonArray
+     *
+     * @param input  - The array to edit
+     * @param toSkip - All items to keep
+     * @return - The cleaned array
+     */
 
     public static JsonArray deleteAllFromJsonArray(JsonArray input, ArrayList<Integer> toSkip) {
         JsonArray temp = new JsonArray();
@@ -102,6 +134,13 @@ public class Utils {
         return temp;
     }
 
+    /**
+     * Method to remove a single item from a JsonArray
+     *
+     * @param input  - The array to edit
+     * @param toSkip - All items to keep
+     * @return - The cleaned array
+     */
     public static JsonArray deleteFromJsonArray(JsonArray input, int toSkip) {
         JsonArray temp = new JsonArray();
         for (int i = 0; i < input.size(); i++) {
@@ -112,6 +151,12 @@ public class Utils {
         return temp;
     }
 
+    /**
+     * Method to convert an abbreviated number to an integer
+     *
+     * @param input - The string to convert
+     * @return - The converted integer
+     */
     public static int convertAbbreviatedNumber(String input) {
         int multiplier;
 
@@ -136,6 +181,13 @@ public class Utils {
         return numericValue * multiplier;
     }
 
+    /**
+     * Method to get net profit from a flip
+     *
+     * @param price   - The purchasing price of the item
+     * @param listFor - The listing price of the item
+     * @return - The net profit
+     */
     public static double getProfit(double price, double listFor) {
         double listingFee = 0;
         double tax = listFor * 0.01;

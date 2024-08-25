@@ -62,14 +62,14 @@ public class NECCommand extends CommandBase {
             if (Objects.equals(args[0], subcommand.getCommandName())) {
                 if (!subcommand.processCommand(sender, Arrays.copyOfRange(args, 1, args.length))) {
                     // processCommand returned false
-                    //Utils.sendMessageWithPrefix("&cFailed to execute command, command usage: /nec "
-                    //+ subcommand.getCommandName() + " " + subcommand.getCommandUsage());
+                    sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED + "Failed to execute command, command usage: /nec "
+                        + subcommand.getCommandName() + " " + subcommand.getCommandUsage()));
                 }
                 return;
             }
         }
-        /*Utils.sendMessageWithPrefix(EnumChatFormatting.RED
-            + "The subcommand wasn't found, please refer to the help message below for the list of subcommands");*/
+        sender.addChatMessage(new ChatComponentText(EnumChatFormatting.RED
+            + "The subcommand wasn't found, please refer to the help message below for the list of subcommands"));
         sendHelp(sender);
     }
 

@@ -50,6 +50,7 @@ public class Blacklist {
         }
         save();
     }
+
     public static void add(String item) {
         JsonObject info = new JsonObject();
         info.add("all", gson.toJsonTree(true));
