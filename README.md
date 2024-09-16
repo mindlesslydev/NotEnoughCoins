@@ -13,8 +13,7 @@ Buy Premium - https://notenoughcoins.net/
 - `/nec toggle` - Enables the mod to return a list of suggested items to flip whenever one is found.
 - `/nec minprofit <amount> ` - Set your minimum profit for flips.
 - `/nec minpercent <amount> ` - Set your minimum percentage profit for flips.
-- `/nec blacklist <add/remove> item ` - Enables the mod to return a list of suggested items to flip whenever one is
-  found.
+- `/nec blacklist <add/remove> item ` - Blacklist a certain item from not showing up in flips.
 - `/nec maxcost <amount> ` - Set the maximum buying price for a flip
 
 # We are not liable for any coins you lost by buying items without checking, flips aren't always perfect
