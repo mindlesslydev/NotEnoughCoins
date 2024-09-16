@@ -20,17 +20,21 @@ public class ApiHandler {
             .get("items").getAsJsonArray();
         for (JsonElement jsonElement : jsonArray) {
             JsonObject item = jsonElement.getAsJsonObject();
-            if (!item.has("category")) {
-                continue;
-            }
+
+            // Remove the category check to include all items
             String name = item.get("name").getAsString();
             String id = item.get("id").getAsString();
             if (id.contains("STARRED")) {
                 continue;
             }
-            String category = item.get("category").getAsString();
-            items.put(name, id);
-            itemTypes.put(id, category);
+
+            items.put(name, id); // Add the item regardless of category
+
+            // If the category exists, store it in itemTypes
+            if (item.has("category")) {
+                String category = item.get("category").getAsString();
+                itemTypes.put(id, category);
+            }
         }
         pets = Utils.getJson("https://notenoughcoins.net/static/pets.json").getAsJsonObject();
         reforges = Utils.getJson("https://notenoughcoins.net/static/reforges.json").getAsJsonArray();
