@@ -6,6 +6,12 @@ import net.minecraft.command.ICommandSender;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonElement;
+
+import java.util.Map;
+import java.util.Set;
+
 public class BlacklistCommand implements Subcommand {
     public BlacklistCommand() {
 
@@ -56,13 +62,18 @@ public class BlacklistCommand implements Subcommand {
         boolean pet = false;
         boolean skin = false;
 
-        if (ApiHandler.items.containsKey(name)) {
+        // Normalize the API names by removing color codes
+        String normalizedItemName = getNormalizedApiName(ApiHandler.items, name);
+        String normalizedPetName = getNormalizedJsonObjectName(ApiHandler.pets, name);
+        String normalizedSkinName = getNormalizedJsonObjectName(ApiHandler.skins, name);
+
+        if (normalizedItemName != null) {
             item = true;
         }
-        if (ApiHandler.pets.has(name)) {
+        if (normalizedPetName != null) {
             pet = true;
         }
-        if (ApiHandler.skins.has(name)) {
+        if (normalizedSkinName != null) {
             skin = true;
         }
 
@@ -73,28 +84,28 @@ public class BlacklistCommand implements Subcommand {
         if (args[0].equals("add")) {
             if (item) {
                 if (modifiers != null) {
-                    Blacklist.add(ApiHandler.items.get(name), modifiers);
+                    Blacklist.add(ApiHandler.items.get(normalizedItemName), modifiers);
                 } else {
-                    Blacklist.add(ApiHandler.items.get(name));
+                    Blacklist.add(ApiHandler.items.get(normalizedItemName));
                 }
             } else if (pet) {
-                Blacklist.addPet(ApiHandler.pets.get(name).getAsJsonArray());
+                Blacklist.addPet(ApiHandler.pets.getAsJsonArray(normalizedPetName));
             } else {
-                Blacklist.addSkin(ApiHandler.skins.get(name).getAsString());
+                Blacklist.addSkin(ApiHandler.skins.get(normalizedSkinName).getAsString());
             }
             sender.addChatMessage(new ChatComponentText("Successfully added " + EnumChatFormatting.GREEN + name
                 + EnumChatFormatting.WHITE + " to the blacklist"));
         } else if (args[0].equals("remove")) {
             if (item) {
                 if (modifiers != null) {
-                    Blacklist.remove(ApiHandler.items.get(name), modifiers);
+                    Blacklist.remove(ApiHandler.items.get(normalizedItemName), modifiers);
                 } else {
-                    Blacklist.remove(ApiHandler.items.get(name));
+                    Blacklist.remove(ApiHandler.items.get(normalizedItemName));
                 }
             } else if (pet) {
-                Blacklist.removePet(ApiHandler.pets.get(name).getAsJsonArray());
+                Blacklist.removePet(ApiHandler.pets.getAsJsonArray(normalizedPetName));
             } else {
-                Blacklist.removeSkin(ApiHandler.skins.get(name).getAsString());
+                Blacklist.removeSkin(ApiHandler.skins.get(normalizedSkinName).getAsString());
             }
             sender.addChatMessage(new ChatComponentText("Successfully removed " + EnumChatFormatting.GREEN + name
                 + EnumChatFormatting.WHITE + " from the blacklist"));
@@ -103,5 +114,35 @@ public class BlacklistCommand implements Subcommand {
             return false;
         }
         return true;
+    }
+
+    // Method to normalize a name by removing color codes
+    private String normalizeName(String input) {
+        // Remove any color codes (%%...%%)
+        return input.replaceAll("%%[a-zA-Z_]+%%", "").trim().toLowerCase();
+    }
+
+    // Method to get the normalized API name for Map
+    private String getNormalizedApiName(Map<String, ?> apiMap, String inputName) {
+        String normalizedInputName = normalizeName(inputName);
+        for (String key : apiMap.keySet()) {
+            String normalizedKey = normalizeName(key);
+            if (normalizedKey.equals(normalizedInputName)) {
+                return key; // Return the original key with color codes
+            }
+        }
+        return null;
+    }
+
+    // Method to get the normalized API name for JsonObject
+    private String getNormalizedJsonObjectName(JsonObject jsonObject, String inputName) {
+        String normalizedInputName = normalizeName(inputName);
+        for (Map.Entry<String, JsonElement> entry : jsonObject.entrySet()) {
+            String normalizedKey = normalizeName(entry.getKey());
+            if (normalizedKey.equals(normalizedInputName)) {
+                return entry.getKey(); // Return the original key with color codes
+            }
+        }
+        return null;
     }
 }
