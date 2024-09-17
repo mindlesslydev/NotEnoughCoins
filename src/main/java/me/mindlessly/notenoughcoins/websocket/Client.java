@@ -17,6 +17,7 @@ import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -29,11 +30,14 @@ public class Client {
     private static final int SERVER_PORT = 8087;
     public static ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(2);
     private static Socket socket;
-
     private static Minecraft mc;
+    private static final List<JsonObject> currentFlips = new ArrayList<>();
+    private static final Set<String> sentCommands = new HashSet<>(); // Set to store sent commands
+    private static long lastFlipTimestamp = 0; // Track the time of the last flip
+    private static int currentFlipIndex = 0; // Track the current index of the flip being viewed
 
     /**
-     * Method to connect the flip server
+     * Method to connect to the flip server
      */
     public static void start() {
         try {
@@ -43,6 +47,7 @@ public class Client {
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
             handleFlipMessages();
+            scheduleFlipListClearTask(); // Start the task to clear the list
 
         } catch (IOException e) {
             Reference.logger.error(e.getMessage());
@@ -52,9 +57,9 @@ public class Client {
     /**
      * Method to check if a flip is blacklisted
      *
-     * @param blacklist - The users blacklist
+     * @param blacklist - The user's blacklist
      * @param flip      - The flip info we are checking
-     * @return - If an item is blacklisted
+     * @return - True if an item is blacklisted, false otherwise
      */
     private static boolean getIfBlacklisted(JsonObject blacklist, JsonObject flip) {
         JsonArray enchants = null;
@@ -109,12 +114,10 @@ public class Client {
                         }
                     }
                 }
-
             }
             if (info.has("gems") && gems != null) {
-
+                // Add logic to check for blacklisted gems here
             }
-
             if (info.has("stars")) {
                 JsonArray blacklistedStars = info.getAsJsonArray("stars");
                 for (JsonElement star : blacklistedStars) {
@@ -123,7 +126,6 @@ public class Client {
                     }
                 }
             }
-
             if (info.has("scrolls") && scrolls != null) {
                 JsonArray blacklistedScrolls = info.getAsJsonArray("scrolls");
                 for (JsonElement scroll : blacklistedScrolls) {
@@ -134,20 +136,18 @@ public class Client {
                     }
                 }
             }
-
             if (info.has("reforges") && reforge != null) {
                 JsonArray blacklistedReforges = info.getAsJsonArray("reforges");
                 for (JsonElement r : blacklistedReforges) {
-                    if (r.getAsString().equals("reforge")) {
+                    if (r.getAsString().equals(reforge)) {
                         return true;
                     }
                 }
             }
-
             if (info.has("enrichments") && enrichment != null) {
                 JsonArray blacklistedEnrichments = info.getAsJsonArray("enrichments");
                 for (JsonElement e : blacklistedEnrichments) {
-                    if (e.getAsString().equals("enrichment")) {
+                    if (e.getAsString().equals(enrichment)) {
                         return true;
                     }
                 }
@@ -165,7 +165,6 @@ public class Client {
                 start();
             }
         }, 10, 1, TimeUnit.SECONDS);
-
     }
 
     /**
@@ -176,17 +175,13 @@ public class Client {
      */
     private static boolean isSocketConnected(Socket socket) {
         try {
-            // Check if the socket's input stream is closed
             if (socket.getInputStream().read() == -1) {
                 return false;
             }
-
-            // Check if the socket's output stream is closed
             socket.getOutputStream().write(0);
         } catch (IOException e) {
             return false;
         }
-
         return true;
     }
 
@@ -197,27 +192,22 @@ public class Client {
         // Listen for server messages in a separate thread
         Thread serverListenerThread = new Thread(() -> {
             try {
-
                 byte[] buffer = new byte[1024];
                 int bytesRead;
                 while ((bytesRead = socket.getInputStream().read(buffer)) != -1) {
-                    //Sometimes multiple JSON objects will be received from the websocket at the same time, we need to separate these
                     String receivedData = new String(buffer, 0, bytesRead, StandardCharsets.UTF_8);
 
                     // Define the regular expression pattern to match JSON objects
                     String regexPattern = "\\{.*?}";
 
-                    // Create a regular expression matcher
                     Pattern pattern = Pattern.compile(regexPattern);
                     Matcher matcher = pattern.matcher(receivedData);
 
                     // Process each matched JSON object
                     while (matcher.find()) {
                         String jsonObject = matcher.group();
-
                         JsonObject config = ConfigHandler.getConfig();
                         try {
-                            // Parse the JSON object of the flip
                             JsonObject flip = new Gson().fromJson(jsonObject, JsonObject.class);
                             JsonObject blacklist = Blacklist.json.get("items").getAsJsonObject();
 
@@ -268,7 +258,6 @@ public class Client {
 
                                 if (config.has("maxcost") && config.get("maxcost").getAsInt() < price) {
                                     continue;
-
                                 } else if (price > Utils.getPurse()) {
                                     continue;
                                 }
@@ -285,10 +274,15 @@ public class Client {
                                     continue;
                                 }
 
+                                // Add the flip to the list of current flips
+                                synchronized (currentFlips) {
+                                    currentFlips.add(flip);
+                                }
+
                                 ChatComponentText msg = new ChatComponentText(EnumChatFormatting.GOLD + "[NEC] " + Utils.getColorCodeFromRarity(flip.get("rarity").getAsString()) + name + EnumChatFormatting.GOLD + stars + EnumChatFormatting.GREEN + " " + Utils.formatPrice(price) + EnumChatFormatting.WHITE + "->" + EnumChatFormatting.GREEN + Utils.formatPrice(listFor) + " " + "+" + Utils.formatPrice(profit));
 
                                 msg.setChatStyle(new ChatStyle().setChatClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/viewauction " + flip.get("uuid").getAsString())));
-
+                                lastFlipTimestamp = System.currentTimeMillis(); // Update the timestamp after processing
                                 if (config.get("toggle").getAsBoolean()) {
                                     mc.thePlayer.addChatMessage(new ChatComponentText(""));
                                     mc.thePlayer.addChatMessage(msg);
@@ -305,5 +299,76 @@ public class Client {
             }
         });
         serverListenerThread.start();
+    }
+
+    /**
+     * Method to schedule a task that clears the flip list after 10 seconds of inactivity
+     */
+    private static void scheduleFlipListClearTask() {
+        scheduledExecutorService.scheduleAtFixedRate(() -> {
+            long currentTime = System.currentTimeMillis();
+            if (currentTime - lastFlipTimestamp >= 10000) { // 10 seconds in milliseconds
+                synchronized (currentFlips) {
+                    currentFlips.clear();
+                    sentCommands.clear(); // Clear the sent commands set
+                    currentFlipIndex = 0; // Reset index when the list is cleared
+                }
+            }
+        }, 10, 1, TimeUnit.SECONDS);
+    }
+
+    /**
+     * Method to open the next most profitable deal
+     */
+    public static void openNextProfitableDeal() {
+        try {
+            if (currentFlips.isEmpty()) {
+                ChatComponentText noFlipsMessage = new ChatComponentText(
+				    EnumChatFormatting.GOLD + "[NEC] " + EnumChatFormatting.RED + "No flips available!"
+				);
+				Minecraft.getMinecraft().thePlayer.addChatMessage(noFlipsMessage);
+                return;
+            }
+
+            JsonObject config = ConfigHandler.getConfig();
+            JsonObject blacklist = Blacklist.json.get("items").getAsJsonObject();
+
+            // Sort flips by profit in descending order
+            List<JsonObject> sortedFlips;
+            synchronized (currentFlips) {
+                sortedFlips = new ArrayList<>(currentFlips);
+            }
+            sortedFlips.sort(Comparator.comparingDouble(f -> -f.get("profit").getAsDouble()));
+
+            // Cycle through the sorted flips
+            JsonObject flipToOpen;
+            synchronized (currentFlips) {
+                do {
+                    if (currentFlipIndex >= sortedFlips.size()) {
+                        currentFlipIndex = 0; // Reset to the first flip
+                    }
+                    flipToOpen = sortedFlips.get(currentFlipIndex);
+                    currentFlipIndex++;
+                } while (sentCommands.contains(flipToOpen.get("uuid").getAsString())); // Check if command was already sent
+            }
+
+            // Send the command to view the auction
+            String uuid = flipToOpen.get("uuid").getAsString();
+            sentCommands.add(uuid); // Mark this command as sent
+            String command = "/viewauction " + uuid;
+            Minecraft.getMinecraft().thePlayer.sendChatMessage(command);
+
+        } catch (Exception e) {
+            Reference.logger.error("Failed to open the next profitable deal: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Method to get the current list of flips
+     */
+    public static List<JsonObject> getCurrentFlips() {
+        synchronized (currentFlips) {
+            return new ArrayList<>(currentFlips); // Return a copy of the list to avoid concurrency issues
+        }
     }
 }
