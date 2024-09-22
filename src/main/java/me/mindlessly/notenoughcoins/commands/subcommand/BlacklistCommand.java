@@ -2,6 +2,7 @@ package me.mindlessly.notenoughcoins.commands.subcommand;
 
 import me.mindlessly.notenoughcoins.utils.ApiHandler;
 import me.mindlessly.notenoughcoins.utils.Blacklist;
+import me.mindlessly.notenoughcoins.utils.EnchantmentData;
 import net.minecraft.command.ICommandSender;
 import net.minecraft.util.ChatComponentText;
 import net.minecraft.util.EnumChatFormatting;
@@ -81,10 +82,13 @@ public class BlacklistCommand implements Subcommand {
             sender.addChatMessage(new ChatComponentText("Item does not exist, Note: CaSe SeNsItIvE"));
             return false;
         }
+
         if (args[0].equals("add")) {
             if (item) {
                 if (modifiers != null) {
-                    Blacklist.add(ApiHandler.items.get(normalizedItemName), modifiers);
+                    // Convert user-friendly enchant names to internal IDs
+                    String convertedModifiers = convertEnchantNames(modifiers);
+                    Blacklist.add(ApiHandler.items.get(normalizedItemName), convertedModifiers);
                 } else {
                     Blacklist.add(ApiHandler.items.get(normalizedItemName));
                 }
@@ -98,7 +102,9 @@ public class BlacklistCommand implements Subcommand {
         } else if (args[0].equals("remove")) {
             if (item) {
                 if (modifiers != null) {
-                    Blacklist.remove(ApiHandler.items.get(normalizedItemName), modifiers);
+                    // Convert user-friendly enchant names to internal IDs
+                    String convertedModifiers = convertEnchantNames(modifiers);
+                    Blacklist.remove(ApiHandler.items.get(normalizedItemName), convertedModifiers);
                 } else {
                     Blacklist.remove(ApiHandler.items.get(normalizedItemName));
                 }
@@ -109,11 +115,38 @@ public class BlacklistCommand implements Subcommand {
             }
             sender.addChatMessage(new ChatComponentText("Successfully removed " + EnumChatFormatting.GREEN + name
                 + EnumChatFormatting.WHITE + " from the blacklist"));
-
         } else {
             return false;
         }
         return true;
+    }
+	
+    private String convertEnchantNames(String modifiers) {
+        String[] parts = modifiers.split("\\s+");
+        StringBuilder converted = new StringBuilder();
+        for (int i = 0; i < parts.length; i++) {
+            String part = parts[i];
+            // Check if this part is an enchantment name
+            String enchantId = getEnchantmentId(part);
+            if (enchantId != null) {
+                converted.append(enchantId);
+            } else {
+                converted.append(part);
+            }
+            if (i < parts.length - 1) {
+                converted.append(" ");
+            }
+        }
+        return converted.toString();
+    }
+
+    private String getEnchantmentId(String enchantName) {
+        for (Map.Entry<String, EnchantmentData> entry : EnchantmentData.getEnchantmentData().entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(enchantName.replace(" ", "_"))) {
+                return entry.getValue().getId();
+            }
+        }
+        return null; // Return null if no matching enchantment is found
     }
 
     // Method to normalize a name by removing color codes
