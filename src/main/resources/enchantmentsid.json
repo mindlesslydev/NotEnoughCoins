@@ -1,0 +1,526 @@
+{
+    "Aiming": {
+        "id": "AIMING",
+        "max": 5
+    },
+    "Angler": {
+        "id": "ANGLER",
+        "max": 6
+    },
+    "Aqua Affinity": {
+        "id": "AQUA_AFFINITY",
+        "max": 1
+    },
+    "Bane of Arthropods": {
+        "id": "BANE_OF_ARTHROPODS",
+        "max": 7
+    },
+    "Bank": {
+        "id": "ULTIMATE_BANK",
+        "max": 5
+    },
+    "Big Brain": {
+        "id": "BIG_BRAIN",
+        "max": 5
+    },
+    "Blast Protection": {
+        "id": "BLAST_PROTECTION",
+        "max": 7
+    },
+    "Blessing": {
+        "id": "BLESSING",
+        "max": 6
+    },
+    "Bobbin' Time": {
+        "id": "ULTIMATE_BOBBIN_TIME",
+        "max": 5
+    },
+    "Cacti": {
+        "id": "TURBO_CACTUS",
+        "max": 5
+    },
+    "Cane": {
+        "id": "TURBO_CANE",
+        "max": 5
+    },
+    "Carrot": {
+        "id": "TURBO_CARROT",
+        "max": 5
+    },
+    "Caster": {
+        "id": "CASTER",
+        "max": 6
+    },
+    "Cayenne": {
+        "id": "CAYENNE",
+        "max": 5
+    },
+    "Champion": {
+        "id": "CHAMPION",
+        "max": 10
+    },
+    "Chance": {
+        "id": "CHANCE",
+        "max": 5
+    },
+    "Charm": {
+        "id": "CHARM",
+        "max": 5
+    },
+    "Chimera": {
+        "id": "ULTIMATE_CHIMERA",
+        "max": 5
+    },
+    "Cleave": {
+        "id": "CLEAVE",
+        "max": 6
+    },
+    "Cocoa": {
+        "id": "TURBO_COCO",
+        "max": 5
+    },
+    "Combo": {
+        "id": "ULTIMATE_COMBO",
+        "max": 5
+    },
+    "Compact": {
+        "id": "COMPACT",
+        "max": 10
+    },
+    "Corruption": {
+        "id": "CORRUPTION",
+        "max": 5
+    },
+    "Critical": {
+        "id": "CRITICAL",
+        "max": 7
+    },
+    "Cubism": {
+        "id": "CUBISM",
+        "max": 6
+    },
+    "Cultivating": {
+        "id": "CULTIVATING",
+        "max": 9
+    },
+    "Dedication": {
+        "id": "DEDICATION",
+        "max": 4
+    },
+    "Delicate": {
+        "id": "DELICATE",
+        "max": 5
+    },
+    "Depth Strider": {
+        "id": "DEPTH_STRIDER",
+        "max": 3
+    },
+    "Divine Gift": {
+        "id": "DIVINE_GIFT",
+        "max": 3
+    },
+    "Dragon Hunter": {
+        "id": "DRAGON_HUNTER",
+        "max": 5
+    },
+    "Duplex": {
+        "id": "ULTIMATE_REITERATE",
+        "max": 5
+    },
+    "Efficiency": {
+        "id": "EFFICIENCY",
+        "max": 10
+    },
+    "Ender Slayer": {
+        "id": "ENDER_SLAYER",
+        "max": 7
+    },
+    "Execute": {
+        "id": "EXECUTE",
+        "max": 6
+    },
+    "Experience": {
+        "id": "EXPERIENCE",
+        "max": 5
+    },
+    "Expertise": {
+        "id": "EXPERTISE",
+        "max": 10
+    },
+    "Fatal Tempo": {
+        "id": "ULTIMATE_FATAL_TEMPO",
+        "max": 5
+    },
+    "Feather Falling": {
+        "id": "FEATHER_FALLING",
+        "max": 20
+    },
+    "Ferocious Mana": {
+        "id": "FEROCIOUS_MANA",
+        "max": 10
+    },
+    "Fire Aspect": {
+        "id": "FIRE_ASPECT",
+        "max": 3
+    },
+    "Fire Protection": {
+        "id": "FIRE_PROTECTION",
+        "max": 7
+    },
+    "First Strike": {
+        "id": "FIRST_STRIKE",
+        "max": 5
+    },
+    "Flame": {
+        "id": "FLAME",
+        "max": 2
+    },
+    "Flash": {
+        "id": "ULTIMATE_FLASH",
+        "max": 5
+    },
+    "Fortune": {
+        "id": "FORTUNE",
+        "max": 4
+    },
+    "Frail": {
+        "id": "FRAIL",
+        "max": 6
+    },
+    "Frost Walker": {
+        "id": "FROST_WALKER",
+        "max": 2
+    },
+    "Giant Killer": {
+        "id": "GIANT_KILLER",
+        "max": 7
+    },
+    "Green Thumb": {
+        "id": "GREEN_THUMB",
+        "max": 5
+    },
+    "Growth": {
+        "id": "GROWTH",
+        "max": 7
+    },
+    "Habanero Tactics": {
+        "id": "ULTIMATE_HABANERO_TACTICS",
+        "max": 5
+    },
+    "Hardened Mana": {
+        "id": "HARDENED_MANA",
+        "max": 10
+    },
+    "Harvesting": {
+        "id": "HARVESTING",
+        "max": 6
+    },
+    "Hecatomb": {
+        "id": "HECATOMB",
+        "max": 10
+    },
+    "Ice Cold": {
+        "id": "ICE_COLD",
+        "max": 5
+    },
+    "Impaling": {
+        "id": "IMPALING",
+        "max": 3
+    },
+    "Inferno": {
+        "id": "ULTIMATE_INFERNO",
+        "max": 5
+    },
+    "Infinite Quiver": {
+        "id": "INFINITE_QUIVER",
+        "max": 10
+    },
+    "Knockback": {
+        "id": "KNOCKBACK",
+        "max": 2
+    },
+    "Last Stand": {
+        "id": "ULTIMATE_LAST_STAND",
+        "max": 5
+    },
+    "Legion": {
+        "id": "ULTIMATE_LEGION",
+        "max": 5
+    },
+    "Lethality": {
+        "id": "LETHALITY",
+        "max": 6
+    },
+    "Life Steal": {
+        "id": "LIFE_STEAL",
+        "max": 5
+    },
+    "Looting": {
+        "id": "LOOTING",
+        "max": 5
+    },
+    "Luck": {
+        "id": "LUCK",
+        "max": 7
+    },
+    "Luck of the Sea": {
+        "id": "LUCK_OF_THE_SEA",
+        "max": 6
+    },
+    "Lure": {
+        "id": "LURE",
+        "max": 6
+    },
+    "Magnet": {
+        "id": "MAGNET",
+        "max": 6
+    },
+    "Mana Steal": {
+        "id": "MANA_STEAL",
+        "max": 3
+    },
+    "Mana Vampire": {
+        "id": "MANA_VAMPIRE",
+        "max": 10
+    },
+    "Melon": {
+        "id": "TURBO_MELON",
+        "max": 5
+    },
+    "Mushrooms": {
+        "id": "TURBO_MUSHROOMS",
+        "max": 5
+    },
+    "No Pain No Gain": {
+        "id": "ULTIMATE_NO_PAIN_NO_GAIN",
+        "max": 5
+    },
+    "One For All": {
+        "id": "ULTIMATE_ONE_FOR_ALL",
+        "max": 1
+    },
+    "Overload": {
+        "id": "OVERLOAD",
+        "max": 5
+    },
+    "Paleontologist": {
+        "id": "PALEONTOLOGIST",
+        "max": 5
+    },
+    "Pesterminator": {
+        "id": "PESTERMINATOR",
+        "max": 5
+    },
+    "Piercing": {
+        "id": "PIERCING",
+        "max": 1
+    },
+    "Piscary": {
+        "id": "PISCARY",
+        "max": 6
+    },
+    "Potato": {
+        "id": "TURBO_POTATO",
+        "max": 5
+    },
+    "Power": {
+        "id": "POWER",
+        "max": 7
+    },
+    "Pristine": {
+        "id": "PRISTINE",
+        "max": 5
+    },
+    "Projectile Protection": {
+        "id": "PROJECTILE_PROTECTION",
+        "max": 7
+    },
+    "Prosecute": {
+        "id": "PROSECUTE",
+        "max": 6
+    },
+    "Prosperity": {
+        "id": "PROSPERITY",
+        "max": 5
+    },
+    "Protection": {
+        "id": "PROTECTION",
+        "max": 7
+    },
+    "Pumpkin": {
+        "id": "TURBO_PUMPKIN",
+        "max": 5
+    },
+    "Punch": {
+        "id": "PUNCH",
+        "max": 2
+    },
+    "Quantum": {
+        "id": "QUANTUM",
+        "max": 5
+    },
+    "Reflection": {
+        "id": "REFLECTION",
+        "max": 5
+    },
+    "Refrigerate": {
+        "id": "ULTIMATE_REFRIGERATE",
+        "max": 5
+    },
+    "Rejuvenate": {
+        "id": "REJUVENATE",
+        "max": 5
+    },
+    "Rend": {
+        "id": "ULTIMATE_REND",
+        "max": 5
+    },
+    "Replenish": {
+        "id": "REPLENISH",
+        "max": 1
+    },
+    "Respiration": {
+        "id": "RESPIRATION",
+        "max": 3
+    },
+    "Respite": {
+        "id": "RESPITE",
+        "max": 5
+    },
+    "Scavenger": {
+        "id": "SCAVENGER",
+        "max": 5
+    },
+    "Sharpness": {
+        "id": "SHARPNESS",
+        "max": 7
+    },
+    "Silk Touch": {
+        "id": "SILK_TOUCH",
+        "max": 1
+    },
+    "Smarty Pants": {
+        "id": "SMARTY_PANTS",
+        "max": 5
+    },
+    "Smelting Touch": {
+        "id": "SMELTING_TOUCH",
+        "max": 1
+    },
+    "Smite": {
+        "id": "SMITE",
+        "max": 7
+    },
+    "Smoldering": {
+        "id": "SMOLDERING",
+        "max": 5
+    },
+    "Snipe": {
+        "id": "SNIPE",
+        "max": 4
+    },
+    "Soul Eater": {
+        "id": "ULTIMATE_SOUL_EATER",
+        "max": 5
+    },
+    "Spiked Hook": {
+        "id": "SPIKED_HOOK",
+        "max": 6
+    },
+    "Strike": {
+        "id": "TRIPLE_STRIKE",
+        "max": 5
+    },
+    "Strong Mana": {
+        "id": "STRONG_MANA",
+        "max": 10
+    },
+    "Sugar Rush": {
+        "id": "SUGAR_RUSH",
+        "max": 3
+    },
+    "Sunder": {
+        "id": "SUNDER",
+        "max": 6
+    },
+    "Swarm": {
+        "id": "ULTIMATE_SWARM",
+        "max": 5
+    },
+    "Syphon": {
+        "id": "SYPHON",
+        "max": 5
+    },
+    "Tabasco": {
+        "id": "TABASCO",
+        "max": 3
+    },
+    "The One": {
+        "id": "ULTIMATE_THE_ONE",
+        "max": 5
+    },
+    "Thorns": {
+        "id": "THORNS",
+        "max": 3
+    },
+    "Thunderbolt": {
+        "id": "THUNDERBOLT",
+        "max": 6
+    },
+    "Thunderlord": {
+        "id": "THUNDERLORD",
+        "max": 7
+    },
+    "Titan Killer": {
+        "id": "TITAN_KILLER",
+        "max": 7
+    },
+    "Toxophilite": {
+        "id": "TOXOPHILITE",
+        "max": 1
+    },
+    "Transylvanian": {
+        "id": "TRANSYLVANIAN",
+        "max": 5
+    },
+    "Triple Strike": {
+        "id": "TRIPLE_STRIKE",
+        "max": 4
+    },
+    "True Protection": {
+        "id": "TRUE_PROTECTION",
+        "max": 1
+    },
+    "Ultimate Jerry": {
+        "id": "ULTIMATE_JERRY",
+        "max": 5
+    },
+    "Ultimate Wise": {
+        "id": "ULTIMATE_WISE",
+        "max": 5
+    },
+    "Vampirism": {
+        "id": "VAMPIRISM",
+        "max": 6
+    },
+    "Venomous": {
+        "id": "VENOMOUS",
+        "max": 6
+    },
+    "Vicious": {
+        "id": "VICIOUS",
+        "max": 5
+    },
+    "Warts": {
+        "id": "TURBO_WARTS",
+        "max": 5
+    },
+    "Wheat": {
+        "id": "TURBO_WHEAT",
+        "max": 5
+    },
+    "Wisdom": {
+        "id": "ULTIMATE_WISDOM",
+        "max": 5
+    }
+}

@@ -67,8 +67,9 @@ processResources {
         include 'mcmod.info'
         expand 'version': project.version
     }
-
+	
     from(sourceSets.main.resources.srcDirs) {
         exclude 'mcmod.info'
+		include 'enchantmentsid.json'
     }
 }

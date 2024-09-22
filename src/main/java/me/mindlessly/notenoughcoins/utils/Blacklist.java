@@ -37,7 +37,6 @@ public class Blacklist {
         }
     }
 
-    // Convert from legacy blacklist JsonArray format to new JsonObject format
     private static void convert() {
         if (json.get("items").isJsonArray()) {
             JsonObject items = new JsonObject();
@@ -68,61 +67,39 @@ public class Blacklist {
         }
 
         JsonArray enchants = new JsonArray();
-        JsonArray gems = new JsonArray();
         JsonArray stars = new JsonArray();
-        JsonArray scrolls = new JsonArray();
         JsonArray reforges = new JsonArray();
-        JsonArray enrichments = new JsonArray();
 
         if (info.has("enchants")) {
             enchants = info.getAsJsonArray("enchants");
         }
-        if (info.has("gems")) {
-            gems = info.getAsJsonArray("gems");
-        }
-
         if (info.has("stars")) {
             stars = info.getAsJsonArray("stars");
         }
-
-        if (info.has("scrolls")) {
-            scrolls = info.getAsJsonArray("scrolls");
-        }
-
         if (info.has("reforges")) {
             reforges = info.getAsJsonArray("reforges");
         }
 
-        if (info.has("enrichments")) {
-            enrichments = info.getAsJsonArray("enrichments");
-        }
         List<String> attributes = Arrays.asList(modifiers.split("\\s*,\\s*"));
         String type = ApiHandler.itemTypes.get(item);
-        JsonArray enchantArray = null;
-        if (ApiHandler.enchants.has(type)) {
-            enchantArray = ApiHandler.enchants.getAsJsonArray(type);
-        }
-        for (String attribute : attributes) {
-            // If translated to enchant, check if enchant is valid for type of item
-            // Deal with level stuff
-            // If not already in list, add enchant to list
-            String attributeTranslated = attribute;
-            attributeTranslated = attributeTranslated.replace(" ", "_");
-            int i = attributeTranslated.lastIndexOf("_");
 
-            if (enchantArray != null && i > -1) {
-                for (JsonElement enchant : enchantArray) {
-                    String enchantID = attributeTranslated.substring(0, i);
-                    if (enchant.getAsString().equalsIgnoreCase(enchantID)) {
-                        enchants.add(Utils.gson.toJsonTree(attributeTranslated.toUpperCase()));
-                        break;
-                    } else if (enchant.getAsString().equalsIgnoreCase("ULTIMATE_" + enchantID)) {
-                        enchants.add(Utils.gson.toJsonTree("ULTIMATE_" + attributeTranslated.toUpperCase()));
-                        break;
-                    }
-                }
+        for (String attribute : attributes) {
+            String[] parts = attribute.split(" ");
+            String enchantName = parts[0].replace(" ", "_").toUpperCase();
+            String comparison = "=";
+            int level = 1;
+
+            if (parts.length >= 3) {
+                comparison = parts[1];
+                level = Integer.parseInt(parts[2]);
             }
 
+            EnchantmentData enchantData = EnchantmentData.getEnchantmentData().get(enchantName);
+            if (enchantData != null) {
+                addEnchantsByComparison(enchants, enchantData.getId(), comparison, level, enchantData.getMax());
+            }
+
+            // Handle reforges
             for (JsonElement reforge : ApiHandler.reforges) {
                 if (attribute.equalsIgnoreCase(reforge.getAsString())) {
                     reforges.add(Utils.gson.toJsonTree(attribute.toLowerCase()));
@@ -130,58 +107,12 @@ public class Blacklist {
                 }
             }
 
+            // Handle stars
             if (attribute.startsWith("stars")) {
-                if (attribute.contains(">=")) {
-                    String starValue = StringUtils.strip(attribute.split(">=")[1]);
-                    int start = Integer.valueOf(starValue);
-                    if (start > 10 || start < 0) {
-                        continue;
-                    }
-                    for (int star = start; star < 11; star++) {
-                        stars.add(Utils.gson.toJsonTree(String.valueOf(star)));
-                    }
-                    continue;
-                } else if (attribute.contains("<=")) {
-                    int end = Integer.valueOf(attribute.split("<=")[1]);
-                    if (end > 10 || end < 0) {
-                        continue;
-                    }
-                    for (int star = 0; star < end + 1; star++) {
-                        stars.add(Utils.gson.toJsonTree(String.valueOf(star)));
-                    }
-                    continue;
-
-                } else if (attribute.contains(">")) {
-                    int start = Integer.valueOf(attribute.split(">")[1]) + 1;
-                    if (start > 10 || start < 0) {
-                        continue;
-                    }
-                    for (int star = start; star < 11; star++) {
-                        stars.add(Utils.gson.toJsonTree(String.valueOf(star)));
-                    }
-                    continue;
-
-                } else if (attribute.contains("<")) {
-                    int end = Integer.valueOf(attribute.split("<")[1]);
-                    if (end > 11 || end < 0) {
-                        continue;
-                    }
-                    for (int star = 0; star < end; star++) {
-                        stars.add(Utils.gson.toJsonTree(String.valueOf(star)));
-                    }
-                    continue;
-
-                } else if (attribute.contains("=")) {
-                    int start = Integer.valueOf(attribute.split("=")[1]);
-                    if (start < 0 || start > 10) {
-                        continue;
-                    }
-                    stars.add(Utils.gson.toJsonTree(String.valueOf(start)));
-                    continue;
-                }
-
+                stars = handleStarAddition(attribute, stars);
             }
 
+            // Handle other attributes (minprofit, minpercent, clean)
             if (attribute.startsWith("minprofit")) {
                 double minProfit;
                 String toConvert = attribute.split("minprofit ")[1];
@@ -201,18 +132,60 @@ public class Blacklist {
             if (attribute.startsWith("clean")) {
                 info.add("clean", Utils.gson.toJsonTree(true));
             }
-            // Handle other attributes
-
         }
+
         info.add("enchants", enchants);
         info.add("stars", stars);
         info.add("reforges", reforges);
         items.add(item, info);
         save();
-
     }
 
-    // Remove item from blacklist
+    private static void addEnchantsByComparison(JsonArray enchants, String enchantId, String comparison, int level, int maxLevel) {
+        switch (comparison) {
+            case ">=":
+                for (int i = level; i <= maxLevel; i++) {
+                    addEnchantIfNotExists(enchants, enchantId, i);
+                }
+                break;
+            case "<=":
+                for (int i = 1; i <= level; i++) {
+                    addEnchantIfNotExists(enchants, enchantId, i);
+                }
+                break;
+            case ">":
+                for (int i = level + 1; i <= maxLevel; i++) {
+                    addEnchantIfNotExists(enchants, enchantId, i);
+                }
+                break;
+            case "<":
+                for (int i = 1; i < level; i++) {
+                    addEnchantIfNotExists(enchants, enchantId, i);
+                }
+                break;
+            case "=":
+            default:
+                addEnchantIfNotExists(enchants, enchantId, level);
+                break;
+        }
+    }
+
+    private static void addEnchantIfNotExists(JsonArray enchants, String enchantName, int level) {
+        String enchantEntry = enchantName + "_" + level;
+        boolean alreadyExists = false;
+
+        for (JsonElement element : enchants) {
+            if (element.getAsString().equalsIgnoreCase(enchantEntry)) {
+                alreadyExists = true;
+                break;
+            }
+        }
+
+        if (!alreadyExists) {
+            enchants.add(new JsonPrimitive(enchantEntry));
+        }
+    }
+
     public static void remove(String item) {
         JsonObject items = json.getAsJsonObject("items");
         if (items.has(item)) {
@@ -221,9 +194,8 @@ public class Blacklist {
         save();
     }
 
-    public static void remove(String item, String modifiers) {
+public static void remove(String item, String modifiers) {
         JsonObject info;
-        List<String> attributes = Arrays.asList(modifiers.split("\\s*,\\s*"));
         JsonObject items = json.getAsJsonObject("items");
         if (items.has(item)) {
             info = items.get(item).getAsJsonObject();
@@ -231,197 +203,211 @@ public class Blacklist {
             return;
         }
 
-        JsonArray enchants = new JsonArray();
-        JsonArray gems = new JsonArray();
-        JsonArray stars = new JsonArray();
-        JsonArray scrolls = new JsonArray();
-        JsonArray reforges = new JsonArray();
-        JsonArray enrichments = new JsonArray();
-
-        boolean all = false;
-
-        if (info.has("all")) {
-            if (info.get("all").getAsBoolean()) {
-                all = true;
-                info.add("all", Utils.gson.toJsonTree(false));
-                String type = ApiHandler.itemTypes.get(item);
-                JsonArray enchantArray = null;
-                if (ApiHandler.enchants.has(type)) {
-                    enchantArray = ApiHandler.enchants.getAsJsonArray(type);
-                }
-                if (enchantArray != null) {
-                    for (JsonElement enchant : enchantArray) {
-                        enchants.add(enchant);
-                    }
-                }
-                for (JsonElement reforge : ApiHandler.reforges) {
-                    reforges.add(reforge);
-                }
-                for (int i = 0; i < 11; i++) {
-                    stars.add(Utils.gson.toJsonTree(String.valueOf(i)));
-                }
-            }
-        }
-
-        if (info.has("enchants") && !all) {
-            enchants = info.getAsJsonArray("enchants");
-        }
-        if (info.has("gems") && !all) {
-            gems = info.getAsJsonArray("gems");
-        }
-
-        if (info.has("stars") && !all) {
-            stars = info.getAsJsonArray("stars");
-        }
-
-        if (info.has("scrolls") && !all) {
-            scrolls = info.getAsJsonArray("scrolls");
-        }
-
-        if (info.has("reforges") && !all) {
-            reforges = info.getAsJsonArray("reforges");
-        }
-
-        if (info.has("enrichments") && !all) {
-            enrichments = info.getAsJsonArray("enrichments");
-        }
+        List<String> attributes = Arrays.asList(modifiers.split("\\s*,\\s*"));
+        JsonArray enchants = info.has("enchants") ? info.getAsJsonArray("enchants") : new JsonArray();
+        JsonArray stars = info.has("stars") ? info.getAsJsonArray("stars") : new JsonArray();
+        JsonArray reforges = info.has("reforges") ? info.getAsJsonArray("reforges") : new JsonArray();
 
         for (String attribute : attributes) {
-            // If translated to enchant, check if enchant is valid for type of item
-            // Deal with level stuff
-            // If not already in list, add enchant to list
-            String attributeTranslated = attribute;
-            attributeTranslated = attributeTranslated.replace(" ", "_");
-            int i = attributeTranslated.lastIndexOf("_");
+            String[] parts = attribute.split(" ");
+            String enchantName = parts[0].replace(" ", "_").toUpperCase();
+            String comparison = "=";
+            int level = 1;
 
-            ArrayList<Integer> toSkip = new ArrayList<Integer>();
-
-            for (int j = 0; j < enchants.size(); j++) {
-                if (enchants.get(j).getAsString().equalsIgnoreCase(attributeTranslated)
-                    || enchants.get(j).getAsString().equalsIgnoreCase("ULTIMATE_" + attributeTranslated)) {
-                    toSkip.add(j);
-                }
-                System.out.println(enchants.get(j).getAsString());
+            if (parts.length >= 3) {
+                comparison = parts[1];
+                level = Integer.parseInt(parts[2]);
             }
 
-            enchants = Utils.deleteAllFromJsonArray(enchants, toSkip);
-
-            toSkip = new ArrayList<Integer>();
-            for (int j = 0; j < reforges.size(); j++) {
-                if (attribute.equalsIgnoreCase(reforges.get(j).getAsString())) {
-                    toSkip.add(j);
-                }
-            }
-            reforges = Utils.deleteAllFromJsonArray(reforges, toSkip);
-
-            if (attribute.contains("stars")) {
-                if (attribute.contains(">=")) {
-                    int start = Integer.valueOf(attribute.split(">=")[1]);
-                    if (start > 10 || start < 0) {
-                        continue;
+            EnchantmentData enchantData = EnchantmentData.getEnchantmentData().get(enchantName);
+            if (enchantData != null) {
+                enchants = removeEnchantsByComparison(enchants, enchantData.getId(), comparison, level, enchantData.getMax());
+            } else if (attribute.startsWith("stars")) {
+                stars = handleStarRemoval(attribute, stars);
+            } else {
+                for (JsonElement reforge : ApiHandler.reforges) {
+                    if (attribute.equalsIgnoreCase(reforge.getAsString())) {
+                        reforges = removeAttribute(reforges, attribute.toLowerCase());
+                        break;
                     }
-                    toSkip = new ArrayList<Integer>();
-                    for (int j = 0; j < stars.size(); j++) {
-                        for (int star = start; star < 11; star++) {
-                            if (stars.get(j).getAsInt() == star) {
-                                toSkip.add(j);
-                            }
-                        }
-                    }
-                    stars = Utils.deleteAllFromJsonArray(stars, toSkip);
-                    continue;
-                } else if (attribute.contains("<=")) {
-                    int end = Integer.valueOf(attribute.split("<=")[1]);
-                    if (end > 10 || end < 0) {
-                        continue;
-                    }
-                    toSkip = new ArrayList<Integer>();
-                    for (int j = 0; j < stars.size(); j++) {
-                        for (int star = 0; star < end + 1; star++) {
-                            if (stars.get(j).getAsInt() == star) {
-                                toSkip.add(j);
-                            }
-                        }
-                    }
-                    stars = Utils.deleteAllFromJsonArray(stars, toSkip);
-                    continue;
-
-                } else if (attribute.contains(">")) {
-                    int start = Integer.valueOf(attribute.split(">")[1]) + 1;
-                    if (start > 10 || start < 0) {
-                        continue;
-                    }
-                    toSkip = new ArrayList<Integer>();
-                    for (int j = 0; j < stars.size(); j++) {
-                        for (int star = start; star < 11; star++) {
-                            if (stars.get(j).getAsInt() == star) {
-                                toSkip.add(j);
-                            }
-                        }
-                    }
-                    stars = Utils.deleteAllFromJsonArray(stars, toSkip);
-                    continue;
-
-                } else if (attribute.contains("<")) {
-                    int end = Integer.valueOf(attribute.split("<")[1]);
-                    if (end > 11 || end < 0) {
-                        continue;
-                    }
-                    toSkip = new ArrayList<Integer>();
-                    for (int j = 0; j < stars.size(); j++) {
-                        for (int star = 0; star < end; star++) {
-                            if (stars.get(j).getAsInt() == star) {
-                                toSkip.add(j);
-                            }
-                        }
-                    }
-                    stars = Utils.deleteAllFromJsonArray(stars, toSkip);
-                    continue;
-
-                } else if (attribute.contains("=")) {
-                    int start = Integer.valueOf(attribute.split("=")[1]);
-                    if (start < 0 || start > 10) {
-                        continue;
-                    }
-                    toSkip = new ArrayList<Integer>();
-                    for (int j = 0; j < stars.size(); j++) {
-                        if (stars.get(j).getAsInt() == start) {
-                            toSkip.add(j);
-                        }
-                    }
-                    stars = Utils.deleteAllFromJsonArray(stars, toSkip);
-                    continue;
-                }
-
-            }
-
-            if (attribute.startsWith("minprofit")) {
-                if (info.has("minprofit")) {
-                    info.remove("minprofit");
                 }
             }
 
-            if (attribute.startsWith("minpercent")) {
-                if (info.has("minpercent")) {
-                    info.remove("minpercent");
-                }
+            if (attribute.startsWith("minprofit") && info.has("minprofit")) {
+                info.remove("minprofit");
             }
 
-            if (attribute.contains("clean")) {
-                info.add("clean", Utils.gson.toJsonTree(false));
+            if (attribute.startsWith("minpercent") && info.has("minpercent")) {
+                info.remove("minpercent");
             }
 
-            // Handle other attributes
+            if (attribute.startsWith("clean") && info.has("clean")) {
+                info.remove("clean");
+            }
         }
-        info.add("enchants", enchants);
-        info.add("stars", stars);
-        info.add("reforges", reforges);
-        items.add(item, info);
-        save();
 
+        if (enchants.size() == 0) {
+            info.remove("enchants");
+        } else {
+            info.add("enchants", enchants);
+        }
+
+        if (stars.size() == 0) {
+            info.remove("stars");
+        } else {
+            info.add("stars", stars);
+        }
+
+        if (reforges.size() == 0) {
+            info.remove("reforges");
+        } else {
+            info.add("reforges", reforges);
+        }
+
+        if (info.entrySet().size() == 0) {
+            items.remove(item);
+        } else {
+            items.add(item, info);
+        }
+        save();
     }
 
-    // Add pet to blacklist
+
+private static JsonArray removeEnchantsByComparison(JsonArray enchants, String enchantId, String comparison, int level, int maxLevel) {
+        JsonArray updatedEnchants = new JsonArray();
+        for (JsonElement element : enchants) {
+            String enchant = element.getAsString();
+            String[] enchantParts = enchant.split("_");
+            String enchantBase = String.join("_", Arrays.copyOfRange(enchantParts, 0, enchantParts.length - 1));
+            int enchantLevel = Integer.parseInt(enchantParts[enchantParts.length - 1]);
+
+            if (enchantBase.equalsIgnoreCase(enchantId)) {
+                boolean keep = false;
+                switch (comparison) {
+                    case ">=":
+                        keep = enchantLevel < level;
+                        break;
+                    case "<=":
+                        keep = enchantLevel > level;
+                        break;
+                    case ">":
+                        keep = enchantLevel <= level;
+                        break;
+                    case "<":
+                        keep = enchantLevel >= level;
+                        break;
+                    case "=":
+                        keep = enchantLevel != level;
+                        break;
+                }
+                if (keep) {
+                    updatedEnchants.add(element);
+                }
+            } else {
+                updatedEnchants.add(element);
+            }
+        }
+        return updatedEnchants;
+    }
+
+    private static JsonArray removeAttribute(JsonArray array, String attribute) {
+        JsonArray updatedArray = new JsonArray();
+        for (JsonElement element : array) {
+            if (!element.getAsString().equalsIgnoreCase(attribute)) {
+                updatedArray.add(element);
+            }
+        }
+        return updatedArray;
+    }
+
+private static JsonArray handleStarRemoval(String attribute, JsonArray stars) {
+    JsonArray updatedStars = new JsonArray();
+
+    if (attribute.contains(">=")) {
+        int start = Integer.parseInt(attribute.split(">=")[1].trim());
+        for (JsonElement star : stars) {
+            if (Integer.parseInt(star.getAsString()) < start) {
+                updatedStars.add(star);
+            }
+        }
+    } else if (attribute.contains("<=")) {
+        int end = Integer.parseInt(attribute.split("<=")[1].trim());
+        // Remove all stars less than or equal to 'end'
+        for (JsonElement star : stars) {
+            if (Integer.parseInt(star.getAsString()) > end) {
+                updatedStars.add(star);
+            }
+        }
+    } else if (attribute.contains(">")) {
+        int start = Integer.parseInt(attribute.split(">")[1].trim());
+        for (JsonElement star : stars) {
+            if (Integer.parseInt(star.getAsString()) > start) {
+                updatedStars.add(star);
+            }
+        }
+    } else if (attribute.contains("<")) {
+        int end = Integer.parseInt(attribute.split("<")[1].trim());
+        for (JsonElement star : stars) {
+            if (Integer.parseInt(star.getAsString()) < end) {
+                updatedStars.add(star);
+            }
+        }
+    } else if (attribute.contains("=")) {
+        int exact = Integer.parseInt(attribute.split("=")[1].trim());
+        for (JsonElement star : stars) {
+            if (Integer.parseInt(star.getAsString()) != exact) {
+                updatedStars.add(star);
+            }
+        }
+    }
+
+    return updatedStars;
+}
+
+    private static JsonArray handleStarAddition(String attribute, JsonArray stars) {
+        if (attribute.contains(">=")) {
+            String starValue = StringUtils.strip(attribute.split(">=")[1]);
+            int start = Integer.valueOf(starValue);
+            if (start > 10 || start < 0) {
+                return stars;
+            }
+            for (int star = start; star < 11; star++) {
+                stars.add(Utils.gson.toJsonTree(String.valueOf(star)));
+            }
+        } else if (attribute.contains("<=")) {
+            int end = Integer.valueOf(attribute.split("<=")[1]);
+            if (end > 10 || end < 0) {
+                return stars;
+            }
+            for (int star = 0; star < end + 1; star++) {
+                stars.add(Utils.gson.toJsonTree(String.valueOf(star)));
+            }
+        } else if (attribute.contains(">")) {
+            int start = Integer.valueOf(attribute.split(">")[1]) + 1;
+            if (start > 10 || start < 0) {
+                return stars;
+            }
+            for (int star = start; star < 11; star++) {
+                stars.add(Utils.gson.toJsonTree(String.valueOf(star)));
+            }
+        } else if (attribute.contains("<")) {
+            int end = Integer.valueOf(attribute.split("<")[1]);
+            if (end > 11 || end < 0) {
+                return stars;
+            }
+            for (int star = 0; star < end; star++) {
+                stars.add(Utils.gson.toJsonTree(String.valueOf(star)));
+            }
+        } else if (attribute.contains("=")) {
+            int start = Integer.valueOf(attribute.split("=")[1]);
+            if (start < 0 || start > 10) {
+                return stars;
+            }
+            stars.add(Utils.gson.toJsonTree(String.valueOf(start)));
+        }
+        return stars;
+    }
+
     public static void addPet(JsonArray array) {
         for (JsonElement element : array) {
             JsonObject info = new JsonObject();
@@ -429,10 +415,8 @@ public class Blacklist {
             json.getAsJsonObject("items").add(element.getAsString(), info);
         }
         save();
-
     }
 
-    // Remove pet from blacklist
     public static void removePet(JsonArray array) {
         for (JsonElement element : array) {
             if (json.getAsJsonObject("items").has(element.getAsString())) {
@@ -447,7 +431,6 @@ public class Blacklist {
         info.add("all", gson.toJsonTree(true));
         json.getAsJsonObject("items").add(item, info);
         save();
-
     }
 
     public static void removeSkin(String item) {
@@ -455,7 +438,6 @@ public class Blacklist {
             json.getAsJsonObject("items").remove(item);
         }
         save();
-
     }
 
     public static void save() {
@@ -465,5 +447,4 @@ public class Blacklist {
             System.err.println("Error saving to file: " + e.getMessage());
         }
     }
-
 }
