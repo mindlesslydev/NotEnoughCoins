@@ -121,13 +121,15 @@ public class BlacklistCommand implements Subcommand {
         return true;
     }
 	
-	private String convertEnchantNames(String modifiers) {
+    private String convertEnchantNames(String modifiers) {
         String[] parts = modifiers.split("\\s+");
         StringBuilder converted = new StringBuilder();
         for (int i = 0; i < parts.length; i++) {
             String part = parts[i];
-            if (EnchantmentData.getEnchantmentData().containsKey(part)) {
-                converted.append(EnchantmentData.getEnchantmentData().get(part).getId());
+            // Check if this part is an enchantment name
+            String enchantId = getEnchantmentId(part);
+            if (enchantId != null) {
+                converted.append(enchantId);
             } else {
                 converted.append(part);
             }
@@ -136,6 +138,15 @@ public class BlacklistCommand implements Subcommand {
             }
         }
         return converted.toString();
+    }
+
+    private String getEnchantmentId(String enchantName) {
+        for (Map.Entry<String, EnchantmentData> entry : EnchantmentData.getEnchantmentData().entrySet()) {
+            if (entry.getKey().equalsIgnoreCase(enchantName.replace(" ", "_"))) {
+                return entry.getValue().getId();
+            }
+        }
+        return null; // Return null if no matching enchantment is found
     }
 
     // Method to normalize a name by removing color codes

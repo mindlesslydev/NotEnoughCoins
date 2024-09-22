@@ -57,89 +57,90 @@ public class Blacklist {
         save();
     }
 
-    public static void add(String item, String modifiers) {
-        JsonObject info;
-        JsonObject items = json.getAsJsonObject("items");
-        if (items.has(item)) {
-            info = items.get(item).getAsJsonObject();
-        } else {
-            info = new JsonObject();
-        }
-
-        JsonArray enchants = new JsonArray();
-        JsonArray stars = new JsonArray();
-        JsonArray reforges = new JsonArray();
-
-        if (info.has("enchants")) {
-            enchants = info.getAsJsonArray("enchants");
-        }
-        if (info.has("stars")) {
-            stars = info.getAsJsonArray("stars");
-        }
-        if (info.has("reforges")) {
-            reforges = info.getAsJsonArray("reforges");
-        }
-
-        List<String> attributes = Arrays.asList(modifiers.split("\\s*,\\s*"));
-        String type = ApiHandler.itemTypes.get(item);
-
-        for (String attribute : attributes) {
-            String[] parts = attribute.split(" ");
-            String enchantName = parts[0].replace(" ", "_").toUpperCase();
-            String comparison = "=";
-            int level = 1;
-
-            if (parts.length >= 3) {
-                comparison = parts[1];
-                level = Integer.parseInt(parts[2]);
-            }
-
-            EnchantmentData enchantData = EnchantmentData.getEnchantmentData().get(enchantName);
-            if (enchantData != null) {
-                addEnchantsByComparison(enchants, enchantData.getId(), comparison, level, enchantData.getMax());
-            }
-
-            // Handle reforges
-            for (JsonElement reforge : ApiHandler.reforges) {
-                if (attribute.equalsIgnoreCase(reforge.getAsString())) {
-                    reforges.add(Utils.gson.toJsonTree(attribute.toLowerCase()));
-                    break;
-                }
-            }
-
-            // Handle stars
-            if (attribute.startsWith("stars")) {
-                stars = handleStarAddition(attribute, stars);
-            }
-
-            // Handle other attributes (minprofit, minpercent, clean)
-            if (attribute.startsWith("minprofit")) {
-                double minProfit;
-                String toConvert = attribute.split("minprofit ")[1];
-                if (toConvert.matches("\\d+[mkb]")) {
-                    minProfit = Utils.convertAbbreviatedNumber(toConvert);
-                } else {
-                    minProfit = Integer.valueOf(toConvert);
-                }
-                info.add("minprofit", Utils.gson.toJsonTree(minProfit));
-            }
-
-            if (attribute.startsWith("minpercent")) {
-                double minPercent = Double.valueOf(attribute.split("minpercent ")[1]);
-                info.add("minpercent", Utils.gson.toJsonTree(minPercent));
-            }
-
-            if (attribute.startsWith("clean")) {
-                info.add("clean", Utils.gson.toJsonTree(true));
-            }
-        }
-
-        info.add("enchants", enchants);
-        info.add("stars", stars);
-        info.add("reforges", reforges);
-        items.add(item, info);
-        save();
+public static void add(String item, String modifiers) {
+    JsonObject info;
+    JsonObject items = json.getAsJsonObject("items");
+    if (items.has(item)) {
+        info = items.get(item).getAsJsonObject();
+    } else {
+        info = new JsonObject();
     }
+
+    JsonArray enchants = new JsonArray();
+    JsonArray stars = new JsonArray();
+    JsonArray reforges = new JsonArray();
+
+    if (info.has("enchants")) {
+        enchants = info.getAsJsonArray("enchants");
+    }
+    if (info.has("stars")) {
+        stars = info.getAsJsonArray("stars");
+    }
+    if (info.has("reforges")) {
+        reforges = info.getAsJsonArray("reforges");
+    }
+
+    List<String> attributes = Arrays.asList(modifiers.split("\\s*,\\s*"));
+    String type = ApiHandler.itemTypes.get(item);
+
+    for (String attribute : attributes) {
+        String[] parts = attribute.split("\\s+");
+        
+        if (isReforge(parts[0])) {
+            reforges.add(new JsonPrimitive(parts[0].toLowerCase()));
+        } else if (attribute.startsWith("stars")) {
+            stars = handleStarAddition(attribute, stars);
+        } else if (parts.length >= 3) {
+            String enchantName = String.join("_", Arrays.copyOfRange(parts, 0, parts.length - 2)).toUpperCase();
+            String comparison = parts[parts.length - 2];
+            String levelStr = parts[parts.length - 1];
+
+            try {
+                int level = Integer.parseInt(levelStr);
+                EnchantmentData enchantData = EnchantmentData.getEnchantmentData().get(enchantName);
+                if (enchantData != null) {
+                    addEnchantsByComparison(enchants, enchantData.getId(), comparison, level, enchantData.getMax());
+                }
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid level format for enchantment: " + enchantName);
+            }
+        }
+
+        // Handle other attributes (minprofit, minpercent, clean)
+        if (attribute.startsWith("minprofit")) {
+            double minProfit;
+            String toConvert = attribute.split("minprofit ")[1];
+            if (toConvert.matches("\\d+[mkb]")) {
+                minProfit = Utils.convertAbbreviatedNumber(toConvert);
+            } else {
+                minProfit = Double.parseDouble(toConvert);
+            }
+            info.addProperty("minprofit", minProfit);
+        }
+
+        if (attribute.startsWith("minpercent")) {
+            double minPercent = Double.parseDouble(attribute.split("minpercent ")[1]);
+            info.addProperty("minpercent", minPercent);
+        }
+
+        if (attribute.startsWith("clean")) {
+            info.addProperty("clean", true);
+        }
+    }
+
+    if (enchants.size() > 0) {
+        info.add("enchants", enchants);
+    }
+    if (stars.size() > 0) {
+        info.add("stars", stars);
+    }
+    if (reforges.size() > 0) {
+        info.add("reforges", reforges);
+    }
+
+    items.add(item, info);
+    save();
+}
 
     private static void addEnchantsByComparison(JsonArray enchants, String enchantId, String comparison, int level, int maxLevel) {
         switch (comparison) {
@@ -170,7 +171,7 @@ public class Blacklist {
         }
     }
 
-    private static void addEnchantIfNotExists(JsonArray enchants, String enchantName, int level) {
+private static void addEnchantIfNotExists(JsonArray enchants, String enchantName, int level) {
         String enchantEntry = enchantName + "_" + level;
         boolean alreadyExists = false;
 
@@ -195,120 +196,135 @@ public class Blacklist {
     }
 
 public static void remove(String item, String modifiers) {
-        JsonObject info;
-        JsonObject items = json.getAsJsonObject("items");
-        if (items.has(item)) {
-            info = items.get(item).getAsJsonObject();
-        } else {
-            return;
-        }
-
-        List<String> attributes = Arrays.asList(modifiers.split("\\s*,\\s*"));
-        JsonArray enchants = info.has("enchants") ? info.getAsJsonArray("enchants") : new JsonArray();
-        JsonArray stars = info.has("stars") ? info.getAsJsonArray("stars") : new JsonArray();
-        JsonArray reforges = info.has("reforges") ? info.getAsJsonArray("reforges") : new JsonArray();
-
-        for (String attribute : attributes) {
-            String[] parts = attribute.split(" ");
-            String enchantName = parts[0].replace(" ", "_").toUpperCase();
-            String comparison = "=";
-            int level = 1;
-
-            if (parts.length >= 3) {
-                comparison = parts[1];
-                level = Integer.parseInt(parts[2]);
-            }
-
-            EnchantmentData enchantData = EnchantmentData.getEnchantmentData().get(enchantName);
-            if (enchantData != null) {
-                enchants = removeEnchantsByComparison(enchants, enchantData.getId(), comparison, level, enchantData.getMax());
-            } else if (attribute.startsWith("stars")) {
-                stars = handleStarRemoval(attribute, stars);
-            } else {
-                for (JsonElement reforge : ApiHandler.reforges) {
-                    if (attribute.equalsIgnoreCase(reforge.getAsString())) {
-                        reforges = removeAttribute(reforges, attribute.toLowerCase());
-                        break;
-                    }
-                }
-            }
-
-            if (attribute.startsWith("minprofit") && info.has("minprofit")) {
-                info.remove("minprofit");
-            }
-
-            if (attribute.startsWith("minpercent") && info.has("minpercent")) {
-                info.remove("minpercent");
-            }
-
-            if (attribute.startsWith("clean") && info.has("clean")) {
-                info.remove("clean");
-            }
-        }
-
-        if (enchants.size() == 0) {
-            info.remove("enchants");
-        } else {
-            info.add("enchants", enchants);
-        }
-
-        if (stars.size() == 0) {
-            info.remove("stars");
-        } else {
-            info.add("stars", stars);
-        }
-
-        if (reforges.size() == 0) {
-            info.remove("reforges");
-        } else {
-            info.add("reforges", reforges);
-        }
-
-        if (info.entrySet().size() == 0) {
-            items.remove(item);
-        } else {
-            items.add(item, info);
-        }
-        save();
+    JsonObject info;
+    JsonObject items = json.getAsJsonObject("items");
+    if (items.has(item)) {
+        info = items.get(item).getAsJsonObject();
+    } else {
+        return;
     }
+
+    List<String> attributes = Arrays.asList(modifiers.split("\\s*,\\s*"));
+    JsonArray enchants = info.has("enchants") ? info.getAsJsonArray("enchants") : new JsonArray();
+    JsonArray stars = info.has("stars") ? info.getAsJsonArray("stars") : new JsonArray();
+    JsonArray reforges = info.has("reforges") ? info.getAsJsonArray("reforges") : new JsonArray();
+
+    for (String attribute : attributes) {
+        String[] parts = attribute.split("\\s+");
+        
+        // Handle stars removal
+        if (parts[0].equalsIgnoreCase("stars")) {
+            stars = handleStarRemoval(attribute, stars);
+        }
+        
+        // Handle reforges removal, similar to how it's handled in the add method
+        else if (isReforge(parts[0])) {
+            reforges = removeAttribute(reforges, parts[0].toLowerCase());
+        }
+
+        // Handle other attributes (minprofit, minpercent, clean)
+        else if (attribute.startsWith("minprofit") && info.has("minprofit")) {
+            info.remove("minprofit");
+        } else if (attribute.startsWith("minpercent") && info.has("minpercent")) {
+            info.remove("minpercent");
+        } else if (attribute.startsWith("clean") && info.has("clean")) {
+            info.remove("clean");
+        }
+
+        // Handle enchantments removal
+        else if (parts.length >= 3) {
+            String enchantName = String.join("_", Arrays.copyOfRange(parts, 0, parts.length - 2)).toUpperCase();
+            String comparison = parts[parts.length - 2];
+            String levelStr = parts[parts.length - 1];
+
+            try {
+                int level = Integer.parseInt(levelStr);
+                EnchantmentData enchantData = EnchantmentData.getEnchantmentData().get(enchantName);
+                if (enchantData != null) {
+                    enchants = removeEnchantsByComparison(enchants, enchantData.getId(), comparison, level, enchantData.getMax());
+                }
+            } catch (NumberFormatException e) {
+                System.err.println("Invalid level format for enchantment: " + enchantName);
+            }
+        }
+    }
+
+    // Update the info object with modified arrays or remove them if empty
+    if (enchants.size() == 0) {
+        info.remove("enchants");
+    } else {
+        info.add("enchants", enchants);
+    }
+
+    if (stars.size() == 0) {
+        info.remove("stars");
+    } else {
+        info.add("stars", stars);
+    }
+
+    if (reforges.size() == 0) {
+        info.remove("reforges");
+    } else {
+        info.add("reforges", reforges);
+    }
+
+    // If the info object is empty, remove the item from the list
+    if (info.entrySet().size() == 0) {
+        items.remove(item);
+    } else {
+        items.add(item, info);
+    }
+
+    save();
+}
+
+
+private static boolean isReforge(String reforge) {
+    for (JsonElement element : ApiHandler.reforges) {
+        if (element.getAsString().equalsIgnoreCase(reforge)) {
+            return true;
+        }
+    }
+    return false;
+}
 
 
 private static JsonArray removeEnchantsByComparison(JsonArray enchants, String enchantId, String comparison, int level, int maxLevel) {
-        JsonArray updatedEnchants = new JsonArray();
-        for (JsonElement element : enchants) {
-            String enchant = element.getAsString();
-            String[] enchantParts = enchant.split("_");
-            String enchantBase = String.join("_", Arrays.copyOfRange(enchantParts, 0, enchantParts.length - 1));
-            int enchantLevel = Integer.parseInt(enchantParts[enchantParts.length - 1]);
+    JsonArray updatedEnchants = new JsonArray();
+    for (JsonElement element : enchants) {
+        String enchant = element.getAsString();
+        String[] enchantParts = enchant.split("_");
+        String enchantBase = String.join("_", Arrays.copyOfRange(enchantParts, 0, enchantParts.length - 1));
+        int enchantLevel = Integer.parseInt(enchantParts[enchantParts.length - 1]);
 
-            if (enchantBase.equalsIgnoreCase(enchantId)) {
-                boolean keep = false;
-                switch (comparison) {
-                    case ">=":
-                        keep = enchantLevel < level;
-                        break;
-                    case "<=":
-                        keep = enchantLevel > level;
-                        break;
-                    case ">":
-                        keep = enchantLevel <= level;
-                        break;
-                    case "<":
-                        keep = enchantLevel >= level;
-                        break;
-                    case "=":
-                        keep = enchantLevel != level;
-                        break;
-                }
-                if (keep) {
-                    updatedEnchants.add(element);
-                }
-            } else {
+        if (enchantBase.equalsIgnoreCase(enchantId)) {
+            boolean keep = false;
+            switch (comparison) {
+                case ">=":
+                    keep = enchantLevel < level;
+                    break;
+                case "<=":
+                    keep = enchantLevel > level;
+                    break;
+                case ">":
+                    keep = enchantLevel <= level;
+                    break;
+                case "<":
+                    keep = enchantLevel >= level;
+                    break;
+                case "=":
+                    keep = enchantLevel != level;
+                    break;
+            }
+            if (keep) {
                 updatedEnchants.add(element);
             }
+        } else {
+            updatedEnchants.add(element);
         }
-        return updatedEnchants;
     }
+    return updatedEnchants;
+}
 
     private static JsonArray removeAttribute(JsonArray array, String attribute) {
         JsonArray updatedArray = new JsonArray();
