@@ -1,27 +1,61 @@
 # NotEnoughCoins
 
-<img alt="Downloads" src="https://img.shields.io/github/downloads/mindlesslydev/notenoughcoins/total.svg" />
+![Downloads](https://img.shields.io/github/downloads/mindlesslydev/notenoughcoins/total.svg)
 
 A SkyBlock Flipping Mod.
 
-Discord - https://notenoughcoins.net/discord
-<br>
-Buy Premium - https://notenoughcoins.net/
+[Discord](https://notenoughcoins.net/discord)  
+[Buy Premium](https://notenoughcoins.net/)
 
-- `/nec` - Shows the config GUI (Temporarily disabled until new GUI is implemented)
-- `/nec help` - Shows the help message containing all the subcommands and their usage
-- `/nec toggle` - Enables the mod to return a list of suggested items to flip whenever one is found.
-- `/nec minprofit <amount> ` - Set your minimum profit for flips.
-- `/nec minpercent <amount> ` - Set your minimum percentage profit for flips.
-- `/nec blacklist <add/remove> item ` - Blacklist a certain item from not showing up in flips. For example /nec blacklist add Hyperion where Ultimate Wise >= 1 will add Ultimate Wise 1 to 5, you can also use =, >, <, =< etc. 
+## Commands
 
-Note that if you add an item and blacklist any instance of that item being found and then decide to start adding enchantments to it and so on you'll have to /nec blacklist remove Hyperion and then /nec blacklist add Hyperion where Ultimate Wise >= 1 etc.
+<details>
+  <summary><code>/nec</code></summary> 
+  Shows the config GUI (Temporarily disabled until the new GUI is implemented).
+</details>
 
-Also other commands for stars / reforges:
-/nec blacklist add Hyperion where stars >= 1
-/nec blacklist add Hyperion where fabled
-Same for remove.
+<details>
+  <summary><code>/nec help</code></summary> 
+  Shows the help message containing all the subcommands and their usage.
+</details>
 
-- `/nec maxcost <amount> ` - Set the maximum buying price for a flip
+<details>
+  <summary><code>/nec toggle</code></summary> 
+  Toggles the mod (Temporarily disabled until the new GUI is implemented).
+</details>
 
-# We are not liable for any coins you lost by buying items without checking, flips aren't always perfect
+<details>
+  <summary><code>/nec minprofit &lt;amount&gt;</code></summary> 
+  Sets the minimum profit threshold for flips (Temporarily disabled until the new GUI is implemented).
+</details>
+
+<details>
+  <summary><code>/nec minpercent &lt;adjustment%&gt;</code></summary> 
+  Sets the minimum profit percentage adjustment (Temporarily disabled until the new GUI is implemented).
+</details>
+
+<details>
+  <summary><code>/nec blacklist &lt;add/remove&gt; &lt;item name&gt;</code></summary> 
+  Blacklists or removes items from being flipped. 
+  
+  **Note**: If you add an item to the blacklist and later add enchantments or other upgrades, you will need to adjust the blacklist. For example:
+  
+  - <code>/nec blacklist remove Hyperion</code>  
+  - <code>/nec blacklist add Hyperion where Ultimate Wise >= 1</code>
+  
+  You can also add other criteria like stars or reforges:
+
+  - <code>/nec blacklist add Hyperion where stars >= 1</code>  
+  - <code>/nec blacklist add Hyperion where fabled</code>
+  
+  The same process applies for removal.
+</details>
+
+<details>
+  <summary><code>/nec maxcost &lt;amount&gt;</code></summary> 
+  Sets the maximum buying price for a flip.
+</details>
+
+---
+
+**Note:** We are not liable for any coins lost by buying items without checking; flips aren't always perfect.
