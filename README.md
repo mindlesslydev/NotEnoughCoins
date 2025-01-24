@@ -1,11 +1,11 @@
 # NotEnoughCoins
 
-![Downloads](https://img.shields.io/github/downloads/mindlesslydev/notenoughcoins/total.svg)
+Due to the project loosing money on hosting cost it was merged with the [SkyCofl mod](https://sky.coflnet.com/mod) which also contains flipping features.
 
-A SkyBlock Flipping Mod.
+> **Note:** This project is no longer maintained if you want to auction flip in Skyblock use the [SkyCofl mod](https://sky.coflnet.com/mod) instead.
 
-[Discord](https://notenoughcoins.net/discord)  
-[Buy Premium](https://notenoughcoins.net/)
+
+
 
 ## Commands
 
@@ -58,4 +58,3 @@ A SkyBlock Flipping Mod.
 
 ---
 
-**Note:** We are not liable for any coins lost by buying items without checking; flips aren't always perfect.
